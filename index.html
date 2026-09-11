@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高校情報Ⅰ シミュレーション教材：単利と複利の比較</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- MathJax for TeX Math Rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .tab-active {
+            border-bottom: 3px solid #2563eb;
+            color: #2563eb;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-700 p-2 rounded-lg">
+                    <i data-lucide="line-chart" class="w-6 h-6 text-indigo-200"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold px-2 py-0.5 bg-indigo-800 text-indigo-200 rounded">高校情報Ⅰ 教材</span>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">モデル化とシミュレーション：単利 vs 複利</h1>
+                </div>
+            </div>
+            <div class="text-xs text-indigo-300 text-right hidden sm:block">
+                資産形成の数理モデルを学ぼう
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 overflow-x-auto">
+            <button onclick="switchTab('sim')" id="tab-btn-sim" class="py-4 px-2 tab-active text-sm sm:text-base flex items-center space-x-2 whitespace-nowrap focus:outline-none">
+                <i data-lucide="sliders" class="w-4 h-4"></i>
+                <span>シミュレーター</span>
+            </button>
+            <button onclick="switchTab('math')" id="tab-btn-math" class="py-4 px-2 text-slate-500 text-sm sm:text-base flex items-center space-x-2 whitespace-nowrap hover:text-slate-700 focus:outline-none">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
+                <span>モデルの解説・数式</span>
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="py-4 px-2 text-slate-500 text-sm sm:text-base flex items-center space-x-2 whitespace-nowrap hover:text-slate-700 focus:outline-none">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>理解度クイズ</span>
+            </button>
+            <button onclick="switchTab('worksheet')" id="tab-btn-worksheet" class="py-4 px-2 text-slate-500 text-sm sm:text-base flex items-center space-x-2 whitespace-nowrap hover:text-slate-700 focus:outline-none">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>授業ワークシート案</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <div id="tab-sim" class="space-y-6">
+            
+            <!-- Controls & Top Cards Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Controls Panel -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center border-b pb-3">
+                        <i data-lucide="settings" class="w-5 h-5 mr-2 text-indigo-600"></i>
+                        パラメータ（条件設定）
+                    </h2>
+
+                    <!-- Initial Principal -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-slate-700">元本（初期投資額）</label>
+                            <span class="text-sm font-bold text-indigo-600" id="val-principal">100 万円</span>
+                        </div>
+                        <input type="range" id="input-principal" min="10" max="1000" step="10" value="100" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                               oninput="updateSimulation()">
+                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>10万円</span>
+                            <span>500万円</span>
+                            <span>1000万円</span>
+                        </div>
+                    </div>
+
+                    <!-- Interest Rate -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-slate-700">年利率（金利）</label>
+                            <span class="text-sm font-bold text-indigo-600" id="val-rate">5.0 %</span>
+                        </div>
+                        <input type="range" id="input-rate" min="0.1" max="15.0" step="0.1" value="5.0" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                               oninput="updateSimulation()">
+                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>0.1%</span>
+                            <span>7.5%</span>
+                            <span>15.0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Investment Duration -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-slate-700">運用期間</label>
+                            <span class="text-sm font-bold text-indigo-600" id="val-years">30 年</span>
+                        </div>
+                        <input type="range" id="input-years" min="1" max="50" step="1" value="30" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                               oninput="updateSimulation()">
+                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>1年</span>
+                            <span>25年</span>
+                            <span>50年</span>
+                        </div>
+                    </div>
+
+                    <!-- Optional: Annual Contribution -->
+                    <div class="pt-2 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-medium text-slate-700 flex items-center">
+                                毎年の追加積立
+                                <span class="text-xs text-slate-400 ml-1 font-normal">(発展設定)</span>
+                            </label>
+                            <span class="text-sm font-bold text-indigo-600" id="val-contribution">0 万円/年</span>
+                        </div>
+                        <input type="range" id="input-contribution" min="0" max="120" step="5" value="0" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                               oninput="updateSimulation()">
+                        <div class="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>0円</span>
+                            <span>60万円</span>
+                            <span>120万円</span>
+                        </div>
+                    </div>
+
+                    <!-- Preset Buttons -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <label class="text-xs font-semibold text-slate-500 block mb-2">典型的なプリセット例</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="applyPreset(100, 0.002, 30, 0)" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition text-left">
+                                🏦 銀行預金 (0.002%)
+                            </button>
+                            <button onclick="applyPreset(100, 3.0, 30, 0)" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition text-left">
+                                📈 堅実運用 (3.0%)
+                            </button>
+                            <button onclick="applyPreset(100, 5.0, 30, 0)" class="px-2 py-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded transition text-left font-medium">
+                                ⭐ 標準株式 (5.0%)
+                            </button>
+                            <button onclick="applyPreset(100, 10.0, 30, 0)" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition text-left">
+                                🚀 高リターン (10.0%)
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Simulation Output Overview Cards & Graph -->
+                <div class="lg:col-span-8 flex flex-col space-y-6">
+                    
+                    <!-- KPI Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Simple Interest Card -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">単利（一次関数モデル）</div>
+                            <div class="text-2xl font-black text-slate-800 mt-1" id="res-simple-total">250 万円</div>
+                            <div class="text-xs text-amber-600 font-semibold mt-1" id="res-simple-gain">利益: +150 万円</div>
+                        </div>
+
+                        <!-- Compound Interest Card -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-600">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">複利（指数関数モデル）</div>
+                            <div class="text-2xl font-black text-blue-600 mt-1" id="res-compound-total">432.2 万円</div>
+                            <div class="text-xs text-blue-600 font-semibold mt-1" id="res-compound-gain">利益: +332.2 万円</div>
+                        </div>
+
+                        <!-- Difference Card -->
+                        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl shadow-sm border border-indigo-100 border-l-4 border-l-purple-600">
+                            <div class="text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center">
+                                <span>複利効果の差額</span>
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 ml-1 text-purple-600"></i>
+                            </div>
+                            <div class="text-2xl font-black text-purple-700 mt-1" id="res-diff-total">+182.2 万円</div>
+                            <div class="text-xs text-purple-600 font-semibold mt-1" id="res-diff-ratio">単利の約 1.73 倍</div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex-grow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-indigo-600"></i>
+                                資産成長プロット
+                            </h3>
+                            <div class="flex items-center space-x-2 text-xs">
+                                <span class="flex items-center"><span class="w-3 h-3 bg-slate-300 rounded-full mr-1"></span>元本</span>
+                                <span class="flex items-center"><span class="w-3 h-3 bg-amber-500 rounded-full mr-1"></span>単利</span>
+                                <span class="flex items-center"><span class="w-3 h-3 bg-blue-600 rounded-full mr-1"></span>複利</span>
+                            </div>
+                        </div>
+                        <div class="relative w-full h-72 sm:h-80">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Insights & Data Table Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Rule of 72 & Key Insights -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="font-bold text-slate-800 flex items-center">
+                        <i data-lucide="lightbulb" class="w-5 h-5 text-amber-500 mr-2"></i>
+                        シミュレーションからわかる特徴
+                    </h3>
+
+                    <!-- 72 Rule Callout -->
+                    <div class="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <div class="text-xs font-bold text-amber-800 uppercase">💡 72の法則 (Rule of 72)</div>
+                        <p class="text-sm text-amber-900 mt-1">
+                            複利運用で元本が<strong class="text-amber-700">「2倍」</strong>になるまでの年数の目安は 
+                            <span class="inline-block bg-white px-2 py-0.5 rounded border border-amber-300 font-mono font-bold text-amber-900">72 ÷ 年利(%)</span> 
+                            で計算できます。
+                        </p>
+                        <div class="mt-2 text-xs text-amber-800 bg-amber-100/70 p-2 rounded">
+                            現在の設定（年利 <span id="rule72-rate" class="font-bold">5.0</span>%）では、約 <strong id="rule72-years" class="text-indigo-700 font-bold">14.4 年</strong> で資産が2倍になります！
+                        </div>
+                    </div>
+
+                    <ul class="text-sm space-y-2 text-slate-600 list-disc list-inside">
+                        <li><strong class="text-slate-800">単利（直線増）:</strong> 利息が常に最初の元本に対してのみ計算されるため、毎年一定額（等差数列）で増えます。</li>
+                        <li><strong class="text-slate-800">複利（曲線増）:</strong> 増えた利息が次の期の元本に組み込まれるため、後半になればなるほど爆発的（等比数列・指数関数的）に増えます。</li>
+                    </ul>
+                </div>
+
+                <!-- Year-by-Year Table -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <i data-lucide="table" class="w-5 h-5 text-indigo-600 mr-2"></i>
+                            年別詳細データ比較
+                        </h3>
+                        <button onclick="downloadCSV()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded flex items-center space-x-1 border border-slate-300 transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span>CSVダウンロード</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-60 border rounded-lg">
+                        <table class="min-w-full text-xs text-left text-slate-600">
+                            <thead class="bg-slate-100 text-slate-700 sticky top-0">
+                                <tr>
+                                    <th class="py-2.5 px-3">経過年</th>
+                                    <th class="py-2.5 px-3">累計投資額</th>
+                                    <th class="py-2.5 px-3 text-amber-700">単利資産額</th>
+                                    <th class="py-2.5 px-3 text-blue-700">複利資産額</th>
+                                    <th class="py-2.5 px-3 text-purple-700">差額 (複利-単利)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic JS Output -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="tab-math" class="hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 space-y-8">
+                
+                <div class="border-b pb-4">
+                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">情報Ⅰ：モデル化とシミュレーション</span>
+                    <h2 class="text-2xl font-bold text-slate-800 mt-2">単利と複利の数理モデル</h2>
+                    <p class="text-slate-600 text-sm mt-1">現実の現省をコンピュータで計算できるよう「数式（モデル）」で表現する方法を学びます。</p>
+                </div>
+
+                <!-- Mathematical Models Comparison Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Simple Interest Model -->
+                    <div class="bg-amber-50/50 rounded-xl p-6 border border-amber-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-amber-900">1. 単利モデル（Simple Interest）</h3>
+                            <span class="text-xs bg-amber-200 text-amber-800 font-bold px-2 py-0.5 rounded">一次関数・等差数列</span>
+                        </div>
+                        <p class="text-xs text-slate-600">
+                            元本 $P$ に対してのみ、毎期一定割合 $r$ の利息がつきます。過去に発生した利息は次期の利息計算に含まれません。
+                        </p>
+                        
+                        <!-- Equation Box -->
+                        <div class="bg-white p-4 rounded-lg border border-amber-300 font-mono text-center text-sm sm:text-base text-slate-800 shadow-sm">
+                            $A_n = P \times (1 + r \times n)$
+                        </div>
+
+                        <div class="text-xs text-slate-600 space-y-1">
+                            <p>・$P$: 元本 (Principal)</p>
+                            <p>・$r$: 年利率 (Rate, 5%なら0.05)</p>
+                            <p>・$n$: 経過年数 (Years)</p>
+                            <p>・$A_n$: $n$年後の総額 (Amount)</p>
+                        </div>
+                        <p class="text-xs text-amber-800 font-medium">
+                            📊 グラフに描くと「直線（一次関数 $y = ax + b$）」になります。
+                        </p>
+                    </div>
+
+                    <!-- Compound Interest Model -->
+                    <div class="bg-blue-50/50 rounded-xl p-6 border border-blue-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-blue-900">2. 複利モデル（Compound Interest）</h3>
+                            <span class="text-xs bg-blue-200 text-blue-800 font-bold px-2 py-0.5 rounded">指数関数・等比数列</span>
+                        </div>
+                        <p class="text-xs text-slate-600">
+                            各期末の利益（利息）を次の期の元本に加えて再投資します。「利息が利息を生む」モデルです。
+                        </p>
+                        
+                        <!-- Equation Box -->
+                        <div class="bg-white p-4 rounded-lg border border-blue-300 font-mono text-center text-sm sm:text-base text-slate-800 shadow-sm">
+                            $A_n = P \times (1 + r)^n$
+                        </div>
+
+                        <div class="text-xs text-slate-600 space-y-1">
+                            <p>・$P$: 元本</p>
+                            <p>・$r$: 年利率</p>
+                            <p>・$n$: 経過年数（**指数**の位置に着目！）</p>
+                            <p>・$A_n$: $n$年後の総額</p>
+                        </div>
+                        <p class="text-xs text-blue-800 font-medium">
+                            📈 グラフに描くと上向きに反り立つ「曲線（指数関数 $y = a \cdot b^x$）」になります。
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Simulation Algorithm Explanation -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-3">
+                    <h3 class="font-bold text-slate-800 flex items-center">
+                        <i data-lucide="code" class="w-5 h-5 text-indigo-600 mr-2"></i>
+                        アルゴリズム（繰り返し処理でのシミュレーション）
+                    </h3>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        プログラムでは、1年ごとの状態変化を繰り返し処理（forループ）で表現することができます。
+                    </p>
+                    
+                    <div class="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-xs overflow-x-auto space-y-1">
+                        <p class="text-slate-500">// 1年ごとの資産シミュレーション処理例 (JavaScript)</p>
+                        <p><span class="text-purple-400">let</span> principal = <span class="text-amber-300">1000000</span>; <span class="text-slate-500">// 初期元本 100万円</span></p>
+                        <p><span class="text-purple-400">let</span> rate = <span class="text-amber-300">0.05</span>; <span class="text-slate-500">// 年利5%</span></p>
+                        <p><span class="text-purple-400">let</span> compound = principal;</p>
+                        <p><span class="text-purple-400">let</span> simple = principal;</p>
+                        <br>
+                        <p><span class="text-purple-400">for</span> (<span class="text-purple-400">let</span> year = 1; year &lt;= 30; year++) {</p>
+                        <p class="pl-4">simple += principal * rate; <span class="text-slate-500">// 単利：元本固定で利加算</span></p>
+                        <p class="pl-4">compound = compound * (1 + rate); <span class="text-slate-500">// 複利：前期末の総額に掛け算</span></p>
+                        <p>}</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="tab-quiz" class="hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 space-y-6">
+                
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">理解度チェッククイズ</h2>
+                    <p class="text-slate-600 text-sm mt-1">シミュレーションやモデルの概念に関する問題を解いて、理解を確認しましょう。</p>
+                </div>
+
+                <div class="space-y-6" id="quiz-container">
+                    
+                    <!-- Question 1 -->
+                    <div class="p-5 border border-slate-200 rounded-xl space-y-3 bg-slate-50/50">
+                        <div class="font-bold text-slate-800 text-sm sm:text-base flex items-start">
+                            <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 shrink-0 mt-0.5">Q1</span>
+                            <span>単利と複利のグラフの形について正しい説明はどれですか？</span>
+                        </div>
+                        <div class="space-y-2 pl-8">
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q1" value="A" class="text-indigo-600">
+                                <span>A. 単利は指数関数（曲線）、複利は一次関数（直線）になる。</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q1" value="B" class="text-indigo-600">
+                                <span>B. 単利は一次関数（直線）、複利は指数関数（曲線）になる。</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q1" value="C" class="text-indigo-600">
+                                <span>C. どちらも二次関数の放物線になる。</span>
+                            </label>
+                        </div>
+                        <div id="q1-feedback" class="hidden text-xs p-3 rounded mt-2"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="p-5 border border-slate-200 rounded-xl space-y-3 bg-slate-50/50">
+                        <div class="font-bold text-slate-800 text-sm sm:text-base flex items-start">
+                            <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 shrink-0 mt-0.5">Q2</span>
+                            <span>「72の法則」を使うと、年利 6% で複利運用した場合、資産が元本の約2倍になるにはおよそ何年かかりますか？</span>
+                        </div>
+                        <div class="space-y-2 pl-8">
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q2" value="A" class="text-indigo-600">
+                                <span>A. 約 6 年</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q2" value="B" class="text-indigo-600">
+                                <span>B. 約 12 年</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q2" value="C" class="text-indigo-600">
+                                <span>C. 約 72 年</span>
+                            </label>
+                        </div>
+                        <div id="q2-feedback" class="hidden text-xs p-3 rounded mt-2"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="p-5 border border-slate-200 rounded-xl space-y-3 bg-slate-50/50">
+                        <div class="font-bold text-slate-800 text-sm sm:text-base flex items-start">
+                            <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 shrink-0 mt-0.5">Q3</span>
+                            <span>シミュレーションにおいて、運用期間（年数）を長くすればするほど「単利」と「複利」の差額はどうなりますか？</span>
+                        </div>
+                        <div class="space-y-2 pl-8">
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q3" value="A" class="text-indigo-600">
+                                <span>A. 年数が経つほど差が急激に広がる。</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q3" value="B" class="text-indigo-600">
+                                <span>B. 年数が経つと差は一定に保たれる。</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm p-2 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer">
+                                <input type="radio" name="q3" value="C" class="text-indigo-600">
+                                <span>C. 最初は差があるが、徐々に差が縮まって同じになる。</span>
+                            </label>
+                        </div>
+                        <div id="q3-feedback" class="hidden text-xs p-3 rounded mt-2"></div>
+                    </div>
+
+                </div>
+
+                <div class="pt-4">
+                    <button onclick="checkAnswers()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow transition text-sm">
+                        回答を判定する
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="tab-worksheet" class="hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 space-y-6">
+                
+                <div class="border-b pb-4 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">授業活用案</span>
+                        <h2 class="text-2xl font-bold text-slate-800 mt-2">情報Ⅰ「モデル化とシミュレーション」探究ワークシート</h2>
+                    </div>
+                </div>
+
+                <div class="space-y-6 text-slate-700 text-sm">
+                    
+                    <div class="p-4 bg-slate-50 border rounded-lg space-y-2">
+                        <h3 class="font-bold text-slate-900 text-base">【単元目標】</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            金利計算という身近な題材を通じて、状態の変化を「一次関数」や「指数関数」という数理モデルとして捉え、コンピュータを用いたシミュレーションによってパラメータ（金利・期間）の変化がどのような影響を及ぼすかを観察・考察する。
+                        </p>
+                    </div>
+
+                    <!-- Worksheet Task 1 -->
+                    <div class="border-l-4 border-indigo-600 pl-4 py-1 space-y-2">
+                        <h4 class="font-bold text-slate-900">課題 1：条件による資産増減のシミュレーション実験</h4>
+                        <p class="text-xs text-slate-600">
+                            元本「100万円」を設定し、アプリのシミュレーターを使って以下の条件での30年後の結果を記録しなさい。
+                        </p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-xs text-left border mt-2">
+                                <thead class="bg-slate-100">
+                                    <tr>
+                                        <th class="p-2 border">条件</th>
+                                        <th class="p-2 border">単利の30年後</th>
+                                        <th class="p-2 border">複利の30年後</th>
+                                        <th class="p-2 border">差額（複利 - 単利）</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="p-2 border">① 年利 1.0%</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 border">② 年利 5.0%</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 border">③ 年利 10.0%</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                        <td class="p-2 border text-slate-400">（________万円）</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Worksheet Task 2 -->
+                    <div class="border-l-4 border-indigo-600 pl-4 py-1 space-y-2">
+                        <h4 class="font-bold text-slate-900">課題 2：「時間の力」に関する考察</h4>
+                        <p class="text-xs text-slate-600">
+                            年利 5% のとき、10年後・20年後・30年後・40年後における「複利と単利の差額」を調べ、年数が経つにつれて差がどのように変化するか記述しなさい。
+                        </p>
+                        <div class="p-3 bg-slate-50 border rounded text-xs text-slate-400 min-h-[60px]">
+                            【記述欄】（例：10年後の差はわずか〇万円だが、30年後には〇万円に広がり、年数が長くなるほど指数関数的に差が開く…など）
+                        </div>
+                    </div>
+
+                    <!-- Worksheet Task 3 -->
+                    <div class="border-l-4 border-indigo-600 pl-4 py-1 space-y-2">
+                        <h4 class="font-bold text-slate-900">課題 3：モデル化の限界と現実世界の考慮要素</h4>
+                        <p class="text-xs text-slate-600">
+                            このシミュレーションモデルは現実の投資・預金と比べてどのような点を単純化（モデル化）していますか？現実世界で考慮すべき要素を1つ以上挙げなさい。
+                        </p>
+                        <div class="p-3 bg-slate-50 border rounded text-xs text-slate-400 min-h-[50px]">
+                            【記述欄】（例：実際には株価や金利は毎年一定ではなく変動する、インフレ（物価上昇）リスク、利益にかかる税金(約20%)、信託報酬等の手数料など）
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <p>高等学校情報科「情報Ⅰ」学習用シミュレーションWeb教材</p>
+            <p class="text-slate-500">※本教材の計算結果は数理モデルに基づくシミュレーションであり、実際の金融商品の運用成果を保証するものではありません。</p>
+        </div>
+    </footer>
+
+    <script>
+        // Chart Instance Global Variable
+        let myChart = null;
+
+        // Active Tab State
+        let currentTab = 'sim';
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // On Page Load
+        window.onload = function() {
+            initChart();
+            updateSimulation();
+        };
+
+        // Tab Switching Function
+        function switchTab(tabId) {
+            currentTab = tabId;
+            ['sim', 'math', 'quiz', 'worksheet'].forEach(id => {
+                const tabEl = document.getElementById(`tab-${id}`);
+                const btnEl = document.getElementById(`tab-btn-${id}`);
+                if (id === tabId) {
+                    tabEl.classList.remove('hidden');
+                    btnEl.classList.add('tab-active');
+                    btnEl.classList.remove('text-slate-500');
+                } else {
+                    tabEl.classList.add('hidden');
+                    btnEl.classList.remove('tab-active');
+                    btnEl.classList.add('text-slate-500');
+                }
+            });
+
+            if (tabId === 'math' && window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        // Apply Preset Configuration
+        function applyPreset(principal, rate, years, contribution) {
+            document.getElementById('input-principal').value = principal;
+            document.getElementById('input-rate').value = rate;
+            document.getElementById('input-years').value = years;
+            document.getElementById('input-contribution').value = contribution;
+            updateSimulation();
+        }
+
+        // Initialize Chart.js
+        function initChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '元本累計',
+                            data: [],
+                            borderColor: '#cbd5e1',
+                            backgroundColor: '#f1f5f9',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '単利（一次関数モデル）',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2.5,
+                            fill: false,
+                            pointRadius: 1.5
+                        },
+                        {
+                            label: '複利（指数関数モデル）',
+                            data: [],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Custom legend used in UI
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toLocaleString('ja-JP')} 万円`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '経過年数 (年)'
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '資産額 (万円)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '万';
+                                }
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSimulation() {
+            // Fetch Slider Values
+            const principal = parseFloat(document.getElementById('input-principal').value);
+            const rate = parseFloat(document.getElementById('input-rate').value) / 100;
+            const years = parseInt(document.getElementById('input-years').value);
+            const annualContrib = parseFloat(document.getElementById('input-contribution').value);
+
+            // Update Labels
+            document.getElementById('val-principal').innerText = `${principal.toLocaleString('ja-JP')} 万円`;
+            document.getElementById('val-rate').innerText = `${(rate * 100).toFixed(1)} %`;
+            document.getElementById('val-years').innerText = `${years} 年`;
+            document.getElementById('val-contribution').innerText = `${annualContrib} 万円/年`;
+
+            // Rule of 72 Display
+            const rule72Rate = rate * 100;
+            document.getElementById('rule72-rate').innerText = rule72Rate.toFixed(1);
+            if (rule72Rate > 0) {
+                const rule72Y = (72 / rule72Rate).toFixed(1);
+                document.getElementById('rule72-years').innerText = `${rule72Y} 年`;
+            } else {
+                document.getElementById('rule72-years').innerText = `∞ 年`;
+            }
+
+            // Calculation Arrays
+            const labels = [];
+            const principalData = [];
+            const simpleData = [];
+            const compoundData = [];
+
+            let currentSimple = principal;
+            let currentCompound = principal;
+            let totalInvested = principal;
+
+            labels.push('0年目');
+            principalData.push(principal);
+            simpleData.push(principal);
+            compoundData.push(principal);
+
+            // Year-by-Year Simulation Loop
+            let tableHTML = '';
+
+            for (let y = 1; y <= years; y++) {
+                totalInvested += annualContrib;
+
+                // Simple Interest: Interest calculated on original principal only (+ annual contribution if any)
+                // Note: With annual contribution, simple interest on contribution = contrib * rate * years_remaining
+                currentSimple = totalInvested + (principal * rate * y);
+                if (annualContrib > 0) {
+                    // Add simple interest for annual contributions
+                    let contribInterest = 0;
+                    for (let i = 1; i <= y; i++) {
+                        contribInterest += annualContrib * rate * (y - i + 1);
+                    }
+                    currentSimple = totalInvested + (principal * rate * y) + contribInterest;
+                }
+
+                // Compound Interest: Previous balance grows by rate, then new contribution is added
+                currentCompound = (currentCompound * (1 + rate)) + annualContrib;
+
+                // Save to chart datasets (Rounded to 2 decimal places)
+                labels.push(`${y}年`);
+                principalData.push(Math.round(totalInvested * 100) / 100);
+                simpleData.push(Math.round(currentSimple * 100) / 100);
+                compoundData.push(Math.round(currentCompound * 100) / 100);
+
+                // Table Row HTML Generation
+                const diff = currentCompound - currentSimple;
+                tableHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2 px-3 font-medium">${y}年目</td>
+                        <td class="py-2 px-3">${totalInvested.toFixed(1)} 万円</td>
+                        <td class="py-2 px-3 text-amber-700 font-medium">${currentSimple.toFixed(1)} 万円</td>
+                        <td class="py-2 px-3 text-blue-700 font-bold">${currentCompound.toFixed(1)} 万円</td>
+                        <td class="py-2 px-3 text-purple-700 font-bold">+${diff.toFixed(1)} 万円</td>
+                    </tr>
+                `;
+            }
+
+            // Update Summary KPI Cards
+            const finalSimple = simpleData[simpleData.length - 1];
+            const finalCompound = compoundData[compoundData.length - 1];
+            const finalInvested = principalData[principalData.length - 1];
+            const finalDiff = finalCompound - finalSimple;
+            const ratio = finalSimple > 0 ? (finalCompound / finalSimple).toFixed(2) : 0;
+
+            document.getElementById('res-simple-total').innerText = `${finalSimple.toLocaleString('ja-JP')} 万円`;
+            document.getElementById('res-simple-gain').innerText = `利益: +${(finalSimple - finalInvested).toFixed(1)} 万円`;
+
+            document.getElementById('res-compound-total').innerText = `${finalCompound.toLocaleString('ja-JP')} 万円`;
+            document.getElementById('res-compound-gain').innerText = `利益: +${(finalCompound - finalInvested).toFixed(1)} 万円`;
+
+            document.getElementById('res-diff-total').innerText = `+${finalDiff.toFixed(1)} 万円`;
+            document.getElementById('res-diff-ratio').innerText = `単利の約 ${ratio} 倍`;
+
+            // Render Table
+            document.getElementById('table-body').innerHTML = tableHTML;
+
+            // Update Chart Data
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].data = principalData;
+                myChart.data.datasets[1].data = simpleData;
+                myChart.data.datasets[2].data = compoundData;
+                myChart.update();
+            }
+        }
+
+        // CSV Export Function
+        function downloadCSV() {
+            const principal = parseFloat(document.getElementById('input-principal').value);
+            const rate = parseFloat(document.getElementById('input-rate').value) / 100;
+            const years = parseInt(document.getElementById('input-years').value);
+            const annualContrib = parseFloat(document.getElementById('input-contribution').value);
+
+            let csvContent = "data:text/csv;charset=utf-8,経過年,累計投資額(万円),単利資産(万円),複利資産(万円),差額(万円)\n";
+
+            let currentCompound = principal;
+            let totalInvested = principal;
+
+            for (let y = 1; y <= years; y++) {
+                totalInvested += annualContrib;
+                let currentSimple = totalInvested + (principal * rate * y);
+                if (annualContrib > 0) {
+                    let contribInterest = 0;
+                    for (let i = 1; i <= y; i++) {
+                        contribInterest += annualContrib * rate * (y - i + 1);
+                    }
+                    currentSimple = totalInvested + (principal * rate * y) + contribInterest;
+                }
+                currentCompound = (currentCompound * (1 + rate)) + annualContrib;
+                const diff = currentCompound - currentSimple;
+
+                csvContent += `${y},${totalInvested.toFixed(2)},${currentSimple.toFixed(2)},${currentCompound.toFixed(2)},${diff.toFixed(2)}\n`;
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `compound_interest_simulation_${years}yrs.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function checkAnswers() {
+            // Answer Keys
+            const answers = {
+                q1: 'B',
+                q2: 'B',
+                q3: 'A'
+            };
+
+            // Explanations
+            const explanations = {
+                q1: {
+                    B: '⭕ 正解！単利は毎年一定額（元本×金利）が増える「一次関数（直線）」、複利は前の年の利益を含めて増える「指数関数（曲線）」になります。',
+                    wrong: '❌ 不正解。単利は毎年定額が増える直線（一次関数）、複利は年数が経つほど伸び率が上がる曲線（指数関数）になります。'
+                },
+                q2: {
+                    B: '⭕ 正解！72 ÷ 6(%) ＝ 12 年となります。',
+                    wrong: '❌ 不正解。72の法則（72 ÷ 年利率）に当てはめると、72 ÷ 6 ＝ 12年 となります。'
+                },
+                q3: {
+                    A: '⭕ 正解！複利は指数関数的（等比数列的）に増加するため、運用期間が長くなればなるほど単利との差が爆発的に開きます。',
+                    wrong: '❌ 不正解。複利の効果は「時間」が経つほど加速するため、年数が経つにつれて差は急激に広がります。'
+                }
+            };
+
+            for (let q in answers) {
+                const selected = document.querySelector(`input[name="${q}"]:checked`);
+                const feedbackEl = document.getElementById(`${q}-feedback`);
+                feedbackEl.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+
+                if (selected) {
+                    if (selected.value === answers[q]) {
+                        feedbackEl.innerText = explanations[q][selected.value];
+                        feedbackEl.classList.add('bg-green-100', 'text-green-800');
+                    } else {
+                        feedbackEl.innerText = explanations[q].wrong;
+                        feedbackEl.classList.add('bg-red-100', 'text-red-800');
+                    }
+                } else {
+                    feedbackEl.innerText = '⚠️ 回答を選択してください。';
+                    feedbackEl.classList.add('bg-amber-100', 'text-amber-800');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
