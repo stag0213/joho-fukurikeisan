@@ -376,16 +376,15 @@
                     </p>
                     
                     <div class="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-xs overflow-x-auto space-y-1">
-                        <p class="text-slate-500">// 1年ごとの資産シミュレーション処理例 (JavaScript)</p>
-                        <p><span class="text-purple-400">let</span> principal = <span class="text-amber-300">1000000</span>; <span class="text-slate-500">// 初期元本 100万円</span></p>
-                        <p><span class="text-purple-400">let</span> rate = <span class="text-amber-300">0.05</span>; <span class="text-slate-500">// 年利5%</span></p>
-                        <p><span class="text-purple-400">let</span> compound = principal;</p>
-                        <p><span class="text-purple-400">let</span> simple = principal;</p>
+                        <p class="text-slate-500"># 1年ごとの資産シミュレーション処理例 (Python)</p>
+                        <p>principal = <span class="text-amber-300">1000000</span> <span class="text-slate-500"># 初期元本 100万円</span></p>
+                        <p>rate = <span class="text-amber-300">0.05</span> <span class="text-slate-500"># 年利5%</span></p>
+                        <p>compound = principal</p>
+                        <p>simple = principal</p>
                         <br>
-                        <p><span class="text-purple-400">for</span> (<span class="text-purple-400">let</span> year = 1; year &lt;= 30; year++) {</p>
-                        <p class="pl-4">simple += principal * rate; <span class="text-slate-500">// 単利：元本固定で利加算</span></p>
-                        <p class="pl-4">compound = compound * (1 + rate); <span class="text-slate-500">// 複利：前期末の総額に掛け算</span></p>
-                        <p>}</p>
+                        <p><span class="text-purple-400">for</span> year <span class="text-purple-400">in</span> <span class="text-blue-400">range</span>(1, 31):</p>
+                        <p class="pl-4">simple += principal * rate <span class="text-slate-500"># 単利：元本固定で利加算</span></p>
+                        <p class="pl-4">compound = compound * (1 + rate) <span class="text-slate-500"># 複利：前期末の総額に掛け算</span></p>
                     </div>
                 </div>
 
